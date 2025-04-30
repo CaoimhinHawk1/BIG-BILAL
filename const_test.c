@@ -1,0 +1,25 @@
+#include <stdio.h>
+
+// Test program for constant propagation
+int main() {
+    // Constants
+    const int WIDTH = 10;
+    const int HEIGHT = 20;
+    
+    // Variables with constant values
+    int area = WIDTH * HEIGHT;
+    int perimeter = 2 * (WIDTH + HEIGHT);
+    
+    // Some calculations using constants
+    int value1 = WIDTH + 5;
+    int value2 = HEIGHT * 2;
+    int value3 = area / 10;
+    
+    printf("Width: %d\n", WIDTH);
+    printf("Height: %d\n", HEIGHT);
+    printf("Area: %d\n", area);
+    printf("Perimeter: %d\n", perimeter);
+    printf("Calculations: %d, %d, %d\n", value1, value2, value3);
+    
+    return 0;
+}
