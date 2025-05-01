@@ -57,6 +57,8 @@ char* new_temp() {
 }
 
 // Add a quadruple to the list
+// This function adds a new quadruple to the quads array and increments the count.
+// It checks if the array is full before adding a new quadruple.
 void add_quadruple(char op, const char* arg1, const char* arg2, const char* result) {
     if (quad_count >= MAX_QUAD_SIZE) {
         printf("Error: Quadruple array full\n");
@@ -108,19 +110,22 @@ int get_precedence(char op) {
 }
 
 // Find the last operator with lowest precedence
+// in the expression between start and end indices
+// This function scans the expression from right to left to find the last operator
+// that is not within parentheses. It returns the index of the operator.
 int find_last_operator(const char* expr, int start, int end) {
     int paren_count = 0;
     int min_precedence = 3;  // Higher than any operator precedence
     int min_precedence_pos = -1;
     
-    for (int i = end; i >= start; i--) {
-        if (expr[i] == ')') {
-            paren_count++;
-        } else if (expr[i] == '(') {
-            paren_count--;
-        } else if (paren_count == 0 && is_operator(expr[i])) {
-            int precedence = get_precedence(expr[i]);
-            
+        for (int i = end; i >= start; i--) {
+            if (expr[i] == ')') {
+                paren_count++;
+            } else if (expr[i] == '(') {
+                paren_count--;
+            } else if (paren_count == 0 && is_operator(expr[i])) {
+                int precedence = get_precedence(expr[i]);
+                
             // For operators with same precedence, choose the leftmost (last in right-to-left scan)
             if (precedence <= min_precedence) {
                 min_precedence = precedence;
@@ -133,6 +138,10 @@ int find_last_operator(const char* expr, int start, int end) {
 }
 
 // Generate code for an expression (recursive)
+// This function generates three-address code for the given expression
+// by recursively breaking it down into subexpressions and operators.
+// It handles operator precedence and parentheses.
+// It returns a temporary variable representing the result of the expression.
 char* generate_code_for_expr(const char* expr, int start, int end) {
     // Skip leading and trailing whitespace
     while (start <= end && isspace(expr[start])) start++;

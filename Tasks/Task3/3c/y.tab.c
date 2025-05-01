@@ -577,8 +577,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    22,    22,    23,    24,    27,    28,    29,    32,    33,
-      34,    44,    45,    46
+       0,    24,    24,    25,    26,    29,    30,    31,    34,    35,
+      36,    46,    47,    48
 };
 #endif
 
@@ -1148,49 +1148,49 @@ yyreduce:
   switch (yyn)
     {
   case 3: /* calclist: calclist expr EOL  */
-#line 23 "parser.y"
+#line 25 "parser.y"
                             { printf("= %.10g\n", (yyvsp[-1].dval)); printf("> "); }
 #line 1154 "y.tab.c"
     break;
 
   case 4: /* calclist: calclist EOL  */
-#line 24 "parser.y"
+#line 26 "parser.y"
                             { printf("> "); }
 #line 1160 "y.tab.c"
     break;
 
   case 5: /* expr: factor  */
-#line 27 "parser.y"
+#line 29 "parser.y"
                             { (yyval.dval) = (yyvsp[0].dval); }
 #line 1166 "y.tab.c"
     break;
 
   case 6: /* expr: expr PLUS factor  */
-#line 28 "parser.y"
+#line 30 "parser.y"
                             { (yyval.dval) = (yyvsp[-2].dval) + (yyvsp[0].dval); }
 #line 1172 "y.tab.c"
     break;
 
   case 7: /* expr: expr MINUS factor  */
-#line 29 "parser.y"
+#line 31 "parser.y"
                             { (yyval.dval) = (yyvsp[-2].dval) - (yyvsp[0].dval); }
 #line 1178 "y.tab.c"
     break;
 
   case 8: /* factor: term  */
-#line 32 "parser.y"
+#line 34 "parser.y"
                             { (yyval.dval) = (yyvsp[0].dval); }
 #line 1184 "y.tab.c"
     break;
 
   case 9: /* factor: factor TIMES term  */
-#line 33 "parser.y"
+#line 35 "parser.y"
                             { (yyval.dval) = (yyvsp[-2].dval) * (yyvsp[0].dval); }
 #line 1190 "y.tab.c"
     break;
 
   case 10: /* factor: factor DIVIDE term  */
-#line 34 "parser.y"
+#line 36 "parser.y"
                             { 
           if ((yyvsp[0].dval) == 0.0) {
               yyerror("Division by zero");
@@ -1203,20 +1203,20 @@ yyreduce:
     break;
 
   case 11: /* term: NUMBER  */
-#line 44 "parser.y"
-                            { $ = (yyvsp[0].dval); }
+#line 46 "parser.y"
+                            { (yyval.dval) = (yyvsp[0].dval); }
 #line 1209 "y.tab.c"
     break;
 
   case 12: /* term: MINUS term  */
-#line 45 "parser.y"
-                             { $ = -(yyvsp[0].dval); }
+#line 47 "parser.y"
+                             { (yyval.dval) = -(yyvsp[0].dval); }
 #line 1215 "y.tab.c"
     break;
 
   case 13: /* term: LPAREN expr RPAREN  */
-#line 46 "parser.y"
-                            { $ = (yyvsp[-1].dval); }
+#line 48 "parser.y"
+                            { (yyval.dval) = (yyvsp[-1].dval); }
 #line 1221 "y.tab.c"
     break;
 
@@ -1414,3 +1414,20 @@ yyreturnlab:
   return yyresult;
 }
 
+#line 50 "parser.y"
+
+
+// Throws an error if the expression is invalid and exits the program
+void yyerror(const char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+    exit(1);
+}
+
+int main() {
+    printf("Calculator\n");
+    printf("Enter expressions, exit execution with Ctrl+C \n");
+    printf("> ");
+    int result = yyparse();
+    printf("\nCalculator exiting.\n");
+    return result;
+}

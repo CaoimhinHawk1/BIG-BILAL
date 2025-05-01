@@ -30,7 +30,7 @@ task3b:
 task3c:
 	cd Tasks/Task3/3c && $(BISON) -d -y parser.y
 	cd Tasks/Task3/3c && $(FLEX) -o lex.yy.c lexer.l
-	$(CC) $(CFLAGS) -o Tasks/Task3/3c/calculator Tasks/Task3/3c/y.tab.c Tasks/Task3/3c/lex.yy.c  -lm
+	$(CC) $(CFLAGS) -o Tasks/Task3/3c/calculator Tasks/Task3/3c/y.tab.c Tasks/Task3/3c/lex.yy.c 
 
 # Task 3d: Abstract Syntax Tree Generator
 task3d:

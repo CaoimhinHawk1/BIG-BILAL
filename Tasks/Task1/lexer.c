@@ -23,11 +23,12 @@ typedef struct {
 } Token;
 
 // Keywords array
+
 const char *keywords[] = {
     "if", "else", "while", "for", "int", "float", "char", "void", "return", NULL
 };
 
-// Function to check if a string is a keyword
+// Function that checks if input is a keyword
 int is_keyword(const char *str) {
     for (int i = 0; keywords[i] != NULL; i++) {
         if (strcmp(str, keywords[i]) == 0) {
@@ -38,6 +39,8 @@ int is_keyword(const char *str) {
 }
 
 // Function to get the next token from input
+// Returns a Token structure with type, lexeme, line, and column
+// Updates line and column numbers as it reads the input
 Token get_token(FILE *fp, int *line, int *column) {
     Token token;
     char c;
@@ -75,6 +78,7 @@ Token get_token(FILE *fp, int *line, int *column) {
     (*column)++;
     
     // Check for identifiers (starting with a letter or underscore)
+    // and followed by letters, digits, or underscores
     if (isalpha(c) || c == '_') {
         int i = 0;
         token.lexeme[i++] = c;
@@ -93,6 +97,8 @@ Token get_token(FILE *fp, int *line, int *column) {
         token.lexeme[i] = '\0';
         
         // Check if the identifier is a keyword
+        // If it is, set the token type to TOKEN_KEYWORD
+        // Otherwise, set it to TOKEN_IDENTIFIER
         if (is_keyword(token.lexeme)) {
             token.type = TOKEN_KEYWORD;
         } else {
@@ -125,6 +131,9 @@ Token get_token(FILE *fp, int *line, int *column) {
     }
     
     // Check for operators
+    // Operators include +, -, *, /, =, <, >, !=
+    // and also include double operators like ==, <=, >=
+    // and single character operators like !, &, |
     if (c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '<' || c == '>' || c == '!') {
         int i = 0;
         token.lexeme[i++] = c;
@@ -144,7 +153,8 @@ Token get_token(FILE *fp, int *line, int *column) {
         return token;
     }
     
-    // Check for delimiters
+    // Check for delimiters (punctuation characters)
+    // Delimiters include (, ), {, }, [, ], ;, ,, .
     if (c == '(' || c == ')' || c == '{' || c == '}' || c == '[' || c == ']' || c == ';' || c == ',' || c == '.') {
         token.lexeme[0] = c;
         token.lexeme[1] = '\0';
@@ -154,6 +164,9 @@ Token get_token(FILE *fp, int *line, int *column) {
     }
     
     // Check for string literals
+    // Checks for opening quote and reads until closing quote or EOF
+    // Handles escape sequences like \n, \t, \", \\
+    // and includes them in the string literal
     if (c == '"') {
         int i = 0;
         token.lexeme[i++] = c;
@@ -185,9 +198,10 @@ Token get_token(FILE *fp, int *line, int *column) {
     }
     
     // Unrecognized character
+    // Treat it as an operator for simplicity
     token.lexeme[0] = c;
     token.lexeme[1] = '\0';
-    token.type = TOKEN_OPERATOR;  // Default to operator for unrecognized chars
+    token.type = TOKEN_OPERATOR; 
     
     return token;
 }

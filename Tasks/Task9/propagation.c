@@ -4,339 +4,358 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#define MAX_LINE_LENGTH 1000
-#define MAX_IDENTIFIER_LENGTH 100
-#define MAX_CODE_LINES 1000
-#define MAX_VARIABLES 100
+#define MAX_LINE_LENGTH 100
+#define MAX_VAR_NAME 20
+#define MAX_VARS 100
 
-// Structure to store constant values
+// Structure to store variable information
 typedef struct {
-    char name[MAX_IDENTIFIER_LENGTH];
+    char name[MAX_VAR_NAME];
     int value;
     bool is_constant;
 } Variable;
 
 // Global variable table
-Variable variables[MAX_VARIABLES];
-int variable_count = 0;
+Variable var_table[MAX_VARS];
+int var_count = 0;
 
 // Function prototypes
-void process_file(const char* input_file, const char* output_file);
-int find_variable(const char* name);
-void add_variable(const char* name, int value, bool is_constant);
-void update_variable(int index, int value, bool is_constant);
-void parse_assignment(char* line);
-char* replace_constants(char* line);
-bool evaluate_constant_expression(char* expr, int* result);
-int parse_expression(char* expr);
-bool is_numeric_literal(const char* str);
+void add_variable(const char *name, int value, bool is_constant);
+int find_variable(const char *name);
+bool is_constant_var(const char *name);
+int get_constant_value(const char *name);
+bool is_numeric(const char *str);
+void process_input(FILE *input, FILE *output);
+void handle_assignment(char *line, FILE *output);
+void handle_operation(char *line, FILE *output);
 
-int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s <input_file> <output_file>\n", argv[0]);
-        return 1;
+int main(int argc, char *argv[]) {
+    FILE *input, *output;
+    
+    // Open input file or use stdin
+    if (argc > 1) {
+        input = fopen(argv[1], "r");
+        if (!input) {
+            perror("Error opening input file");
+            return 1;
+        }
+    } else {
+        input = stdin;
     }
     
-    const char* input_file = argv[1];
-    const char* output_file = argv[2];
+    // Open output file or use stdout
+    if (argc > 2) {
+        output = fopen(argv[2], "w");
+        if (!output) {
+            perror("Error opening output file");
+            if (argc > 1) fclose(input);
+            return 1;
+        }
+    } else {
+        output = stdout;
+    }
     
-    process_file(input_file, output_file);
+    // Process the input
+    process_input(input, output);
+    
+    // Clean up
+    if (argc > 1) fclose(input);
+    if (argc > 2) fclose(output);
     
     return 0;
 }
 
-// Process the input file and perform constant propagation
-void process_file(const char* input_file, const char* output_file) {
-    FILE* in_fp = fopen(input_file, "r");
-    if (!in_fp) {
-        perror("Error opening input file");
-        exit(1);
+// Add a variable to the table
+void add_variable(const char *name, int value, bool is_constant) {
+    if (var_count >= MAX_VARS) {
+        fprintf(stderr, "Error: Variable table full\n");
+        return;
     }
     
-    // Read the entire file
-    char* code[MAX_CODE_LINES];
-    int num_lines = 0;
-    char buffer[MAX_LINE_LENGTH];
-    
-    while (fgets(buffer, MAX_LINE_LENGTH, in_fp) && num_lines < MAX_CODE_LINES) {
-        // Remove trailing newline
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len-1] == '\n') {
-            buffer[len-1] = '\0';
-        }
-        
-        code[num_lines] = strdup(buffer);
-        num_lines++;
+    // First check if variable already exists
+    int idx = find_variable(name);
+    if (idx != -1) {
+        var_table[idx].value = value;
+        var_table[idx].is_constant = is_constant;
+        return;
     }
     
-    fclose(in_fp);
-    
-    // First pass: identify constant variables and their values
-    for (int i = 0; i < num_lines; i++) {
-        parse_assignment(code[i]);
-    }
-    
-    // Print the variables found
-    printf("Variables identified:\n");
-    for (int i = 0; i < variable_count; i++) {
-        printf("  %s = %d (constant: %s)\n", 
-               variables[i].name, variables[i].value, 
-               variables[i].is_constant ? "yes" : "no");
-    }
-    
-    // Second pass: replace constants in expressions
-    for (int i = 0; i < num_lines; i++) {
-        char* modified_line = replace_constants(code[i]);
-        free(code[i]);
-        code[i] = modified_line;
-    }
-    
-    // Write the output file
-    FILE* out_fp = fopen(output_file, "w");
-    if (!out_fp) {
-        perror("Error opening output file");
-        exit(1);
-    }
-    
-    for (int i = 0; i < num_lines; i++) {
-        fprintf(out_fp, "%s\n", code[i]);
-        free(code[i]);  // Free memory
-    }
-    
-    fclose(out_fp);
-    printf("Constant propagation completed. Output written to %s\n", output_file);
+    // Add new variable
+    strncpy(var_table[var_count].name, name, MAX_VAR_NAME - 1);
+    var_table[var_count].name[MAX_VAR_NAME - 1] = '\0';
+    var_table[var_count].value = value;
+    var_table[var_count].is_constant = is_constant;
+    var_count++;
 }
 
-// Find a variable in the table by name
-int find_variable(const char* name) {
-    for (int i = 0; i < variable_count; i++) {
-        if (strcmp(variables[i].name, name) == 0) {
+// Find a variable in the table
+int find_variable(const char *name) {
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(var_table[i].name, name) == 0) {
             return i;
         }
     }
     return -1;  // Not found
 }
 
-// Add a new variable to the table
-void add_variable(const char* name, int value, bool is_constant) {
-    if (variable_count >= MAX_VARIABLES) {
-        printf("Error: Variable table full\n");
-        return;
+// Check if a variable is a constant
+bool is_constant_var(const char *name) {
+    int idx = find_variable(name);
+    if (idx != -1) {
+        return var_table[idx].is_constant;
     }
-    
-    strcpy(variables[variable_count].name, name);
-    variables[variable_count].value = value;
-    variables[variable_count].is_constant = is_constant;
-    variable_count++;
+    return false;
 }
 
-// Update an existing variable
-void update_variable(int index, int value, bool is_constant) {
-    variables[index].value = value;
-    variables[index].is_constant = is_constant;
+// Get the value of a constant
+int get_constant_value(const char *name) {
+    int idx = find_variable(name);
+    if (idx != -1) {
+        return var_table[idx].value;
+    }
+    return 0;  // Default to 0 (should not happen if checking is_constant first)
 }
 
-// Parse an assignment statement
-void parse_assignment(char* line) {
-    // Skip whitespace and preprocessor directives
-    if (line[0] == '#' || line[0] == '\0') {
-        return;
+// Check if a string is a numeric value
+bool is_numeric(const char *str) {
+    if (str == NULL || *str == '\0') {
+        return false;
     }
     
-    // Look for assignment operator
-    char* assign_pos = strstr(line, "=");
-    if (!assign_pos) {
-        return;  // No assignment found
-    }
-    
-    // Extract the left-hand side (variable name)
-    char var_name[MAX_IDENTIFIER_LENGTH];
-    int name_len = assign_pos - line;
-    if (name_len >= MAX_IDENTIFIER_LENGTH) {
-        return;  // Variable name too long
-    }
-    
-    strncpy(var_name, line, name_len);
-    var_name[name_len] = '\0';
-    
-    // Trim trailing whitespace from variable name
-    char* p = var_name + name_len - 1;
-    while (p >= var_name && isspace(*p)) p--;
-    p[1] = '\0';
-    
-    // Skip keywords and declarations
-    if (strstr(var_name, "int ") || strstr(var_name, "float ") || 
-        strstr(var_name, "char ") || strstr(var_name, "double ")) {
-        // Extract just the variable name after the type
-        char* start = var_name;
-        while (*start && !isalpha(*start) && *start != '_') start++;
-        
-        if (!*start) return;  // No valid identifier found
-        
-        p = start;
-        while (*p && (isalnum(*p) || *p == '_')) p++;
-        *p = '\0';
-        
-        strcpy(var_name, start);
-    } else {
-        // Trim leading whitespace
-        char* start = var_name;
-        while (*start && isspace(*start)) start++;
-        
-        if (!*start) return;  // No valid identifier found
-        
-        // Check if it's a valid identifier
-        if (!isalpha(*start) && *start != '_') {
-            return;  // Not a valid identifier
-        }
-        
-        strcpy(var_name, start);
-    }
-    
-    // Extract the right-hand side (expression)
-    char* expr = assign_pos + 1;
-    
-    // Trim leading whitespace from expression
-    while (*expr && isspace(*expr)) expr++;
-    
-    // Check if this is a constant assignment
-    bool is_constant = false;
-    int value = 0;
-    
-    if (evaluate_constant_expression(expr, &value)) {
-        is_constant = true;
-    }
-    
-    // Update the variable table
-    int var_index = find_variable(var_name);
-    if (var_index == -1) {
-        add_variable(var_name, value, is_constant);
-    } else {
-        update_variable(var_index, value, is_constant);
-    }
-}
-
-// Replace constants in a line of code
-char* replace_constants(char* line) {
-    char result[MAX_LINE_LENGTH];
-    strcpy(result, line);
-    
-    // Don't modify preprocessor directives, comments, or string literals
-    if (line[0] == '#' || strstr(line, "//") == line || strstr(line, "/*") == line ||
-        strstr(line, "\"") != NULL) {
-        return strdup(result);
-    }
-    
-    // Don't modify the left side of assignments
-    char* assign_pos = strstr(result, "=");
-    if (assign_pos) {
-        // Only process the right-hand side
-        char* expr = assign_pos + 1;
-        
-        // Look for constant variables to replace
-        for (int i = 0; i < variable_count; i++) {
-            if (!variables[i].is_constant) continue;
-            
-            char* pos = expr;
-            while ((pos = strstr(pos, variables[i].name)) != NULL) {
-                // Check if it's a standalone variable (not part of another identifier)
-                if ((pos == expr || !isalnum(*(pos-1))) && 
-                    !isalnum(*(pos + strlen(variables[i].name)))) {
-                    
-                    // Replace with the constant value
-                    char value_str[20];
-                    sprintf(value_str, "%d", variables[i].value);
-                    
-                    char temp[MAX_LINE_LENGTH];
-                    strncpy(temp, result, pos - result);
-                    temp[pos - result] = '\0';
-                    strcat(temp, value_str);
-                    strcat(temp, pos + strlen(variables[i].name));
-                    strcpy(result, temp);
-                    
-                    // Start from the beginning of the replaced text
-                    expr = assign_pos + 1;
-                    pos = expr;
-                } else {
-                    // Move past this occurrence
-                    pos += strlen(variables[i].name);
-                }
-            }
-        }
-    } else {
-        // No assignment, just replace all constants
-        for (int i = 0; i < variable_count; i++) {
-            if (!variables[i].is_constant) continue;
-            
-            char* pos = result;
-            while ((pos = strstr(pos, variables[i].name)) != NULL) {
-                // Check if it's a standalone variable (not part of another identifier)
-                if ((pos == result || !isalnum(*(pos-1))) && 
-                    !isalnum(*(pos + strlen(variables[i].name)))) {
-                    
-                    // Replace with the constant value
-                    char value_str[20];
-                    sprintf(value_str, "%d", variables[i].value);
-                    
-                    char temp[MAX_LINE_LENGTH];
-                    strncpy(temp, result, pos - result);
-                    temp[pos - result] = '\0';
-                    strcat(temp, value_str);
-                    strcat(temp, pos + strlen(variables[i].name));
-                    strcpy(result, temp);
-                    
-                    // Start from the beginning of the result
-                    pos = result;
-                } else {
-                    // Move past this occurrence
-                    pos += strlen(variables[i].name);
-                }
-            }
-        }
-    }
-    
-    return strdup(result);
-}
-
-// Check if a string is a numeric literal
-bool is_numeric_literal(const char* str) {
     // Skip leading whitespace
-    while (*str && isspace(*str)) str++;
+    while (isspace((unsigned char)*str)) {
+        str++;
+    }
     
-    // Check for optional sign
-    if (*str == '+' || *str == '-') str++;
+    // Handle optional sign
+    if (*str == '+' || *str == '-') {
+        str++;
+    }
     
-    // Must have at least one digit
-    if (!isdigit(*str)) return false;
-    
-    // Check the rest of the string
-    while (*str && isdigit(*str)) str++;
+    // Check for at least one digit
+    bool has_digit = false;
+    while (isdigit((unsigned char)*str)) {
+        has_digit = true;
+        str++;
+    }
     
     // Skip trailing whitespace
-    while (*str && isspace(*str)) str++;
-    
-    // If we reached the end, it's a valid numeric literal
-    return *str == '\0';
-}
-
-// Evaluate a constant expression
-bool evaluate_constant_expression(char* expr, int* result) {
-    // Simple case: numeric literal
-    if (is_numeric_literal(expr)) {
-        *result = atoi(expr);
-        return true;
+    while (isspace((unsigned char)*str)) {
+        str++;
     }
     
-    // Check for simple variable reference
-    for (int i = 0; i < variable_count; i++) {
-        if (variables[i].is_constant && strcmp(expr, variables[i].name) == 0) {
-            *result = variables[i].value;
-            return true;
+    return has_digit && *str == '\0';
+}
+
+// Process the input file
+void process_input(FILE *input, FILE *output) {
+    char line[MAX_LINE_LENGTH];
+    
+    while (fgets(line, sizeof(line), input)) {
+        // Remove trailing newline
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
+        
+        // Skip empty lines
+        if (strlen(line) == 0) {
+            continue;
+        }
+        
+        // Process based on the first character
+        if (line[0] == '=') {
+            // Assignment line (e.g., "= 3 - a")
+            handle_assignment(line, output);
+        } else if (line[0] == '+' || line[0] == '-' || line[0] == '*' || line[0] == '/') {
+            // Operation line (e.g., "+ a b t1")
+            handle_operation(line, output);
+        } else {
+            // Just copy the line as-is
+            fprintf(output, "%s\n", line);
+        }
+    }
+}
+
+// Handle assignment line (= value var)
+void handle_assignment(char *line, FILE *output) {
+    char operator;
+    char operand1[MAX_VAR_NAME];
+    char operand2[MAX_VAR_NAME];
+    char result[MAX_VAR_NAME];
+    
+    // Parse the assignment line
+    if (sscanf(line, "= %s", result) == 1) {
+        // Handle simple assignment (= value var)
+        char value_str[MAX_VAR_NAME];
+        if (sscanf(line, "= %s %s", value_str, result) == 2) {
+            // Check if value is a numeric constant
+            if (is_numeric(value_str)) {
+                int value = atoi(value_str);
+                add_variable(result, value, true);  // Mark as constant
+                fprintf(output, "%s\n", line);  // Keep as-is
+                return;
+            }
+            
+            // Check if value is a constant variable
+            if (is_constant_var(value_str)) {
+                int value = get_constant_value(value_str);
+                add_variable(result, value, true);  // Mark as constant
+                fprintf(output, "= %d %s\n", value, result);  // Replace with constant value
+                return;
+            }
+            
+            // Value is not a constant, so result isn't either
+            add_variable(result, 0, false);
+            fprintf(output, "%s\n", line);  // Keep as-is
+            return;
+        }
+        
+        // Handle operation assignment (= expr op var)
+        if (sscanf(line, "= %s %c %s", operand1, &operator, operand2) == 3) {
+            // Both operands are constants (numeric or variables)
+            bool op1_is_const = is_numeric(operand1) || is_constant_var(operand1);
+            bool op2_is_const = is_numeric(operand2) || is_constant_var(operand2);
+            
+            int val1, val2;
+            if (is_numeric(operand1)) {
+                val1 = atoi(operand1);
+            } else if (is_constant_var(operand1)) {
+                val1 = get_constant_value(operand1);
+            }
+            
+            if (is_numeric(operand2)) {
+                val2 = atoi(operand2);
+            } else if (is_constant_var(operand2)) {
+                val2 = get_constant_value(operand2);
+            }
+            
+            // If both operands are constants, compute the result and mark as constant
+            if (op1_is_const && op2_is_const) {
+                int result_val;
+                switch (operator) {
+                    case '+': result_val = val1 + val2; break;
+                    case '-': result_val = val1 - val2; break;
+                    case '*': result_val = val1 * val2; break;
+                    case '/': 
+                        if (val2 != 0) result_val = val1 / val2; 
+                        else {
+                            fprintf(stderr, "Warning: Division by zero\n");
+                            result_val = 0;
+                        }
+                        break;
+                    default: result_val = 0;
+                }
+                add_variable(result, result_val, true);
+                
+                // Output the line with constants replaced
+                fprintf(output, "= %d %s\n", result_val, result);
+                return;
+            }
+            
+            // Replace individual constants but keep the operation
+            char new_op1[MAX_VAR_NAME];
+            char new_op2[MAX_VAR_NAME];
+            
+            if (op1_is_const) {
+                sprintf(new_op1, "%d", val1);
+            } else {
+                strcpy(new_op1, operand1);
+            }
+            
+            if (op2_is_const) {
+                sprintf(new_op2, "%d", val2);
+            } else {
+                strcpy(new_op2, operand2);
+            }
+            
+            fprintf(output, "= %s %c %s %s\n", new_op1, operator, new_op2, result);
+            
+            // Since at least one operand is not constant, result is not constant
+            add_variable(result, 0, false);
+            return;
         }
     }
     
-    // TODO: For a complete solution, implement a full expression evaluator
-    // that can handle complex expressions with operators and parentheses
+    // If we get here, we couldn't parse the line properly
+    fprintf(output, "%s\n", line);  // Keep as-is
+}
+
+// Handle operation line (op operand1 operand2 result)
+void handle_operation(char *line, FILE *output) {
+    char operator;
+    char operand1[MAX_VAR_NAME];
+    char operand2[MAX_VAR_NAME];
+    char result[MAX_VAR_NAME];
     
-    return false;  // Not a constant expression
+    // Extract the operator
+    operator = line[0];
+    
+    // Parse the operation line
+    if (sscanf(line, "%c %s %s %s", &operator, operand1, operand2, result) == 4) {
+        // Check if operands are constants
+        bool op1_is_const = is_numeric(operand1) || is_constant_var(operand1);
+        bool op2_is_const = is_numeric(operand2) || is_constant_var(operand2);
+        
+        int val1, val2;
+        if (is_numeric(operand1)) {
+            val1 = atoi(operand1);
+        } else if (is_constant_var(operand1)) {
+            val1 = get_constant_value(operand1);
+        }
+        
+        if (is_numeric(operand2)) {
+            val2 = atoi(operand2);
+        } else if (is_constant_var(operand2)) {
+            val2 = get_constant_value(operand2);
+        }
+        
+        // If both operands are constants, compute the result and mark as constant
+        if (op1_is_const && op2_is_const) {
+            int result_val;
+            switch (operator) {
+                case '+': result_val = val1 + val2; break;
+                case '-': result_val = val1 - val2; break;
+                case '*': result_val = val1 * val2; break;
+                case '/': 
+                    if (val2 != 0) result_val = val1 / val2; 
+                    else {
+                        fprintf(stderr, "Warning: Division by zero\n");
+                        result_val = 0;
+                    }
+                    break;
+                default: result_val = 0;
+            }
+            add_variable(result, result_val, true);
+            
+            // Output the line with result value
+            fprintf(output, "%c %d %d %s\n", operator, val1, val2, result);
+            return;
+        }
+        
+        // Replace individual constants but keep the operation
+        char new_op1[MAX_VAR_NAME];
+        char new_op2[MAX_VAR_NAME];
+        
+        if (op1_is_const) {
+            sprintf(new_op1, "%d", val1);
+        } else {
+            strcpy(new_op1, operand1);
+        }
+        
+        if (op2_is_const) {
+            sprintf(new_op2, "%d", val2);
+        } else {
+            strcpy(new_op2, operand2);
+        }
+        
+        fprintf(output, "%c %s %s %s\n", operator, new_op1, new_op2, result);
+        
+        // Since at least one operand is not constant, result is not constant
+        add_variable(result, 0, false);
+        return;
+    }
+    
+    // If we get here, we couldn't parse the line properly
+    fprintf(output, "%s\n", line);  // Keep as-is
 }

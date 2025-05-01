@@ -10,6 +10,8 @@ void update_position_token(int length);
 %}
 
 /* Regular definitions */
+/* The following regular definitions are used to match different tokens in the input. */
+/* Each token type is associated with a specific pattern. */
 DIGIT       [0-9]
 LETTER      [a-zA-Z]
 ID          {LETTER}({LETTER}|{DIGIT}|_)*
@@ -69,7 +71,11 @@ COMMENT     \/\/.*\n
 .           { update_position_token(yyleng); printf("UNKNOWN\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 
 %%
+/* The above rules define how to handle different tokens. Each rule specifies a pattern and the action to take when that pattern is matched. 
+   The action typically involves printing the token type, lexeme, line number, and column number. */
 
+/* The following functions are used to update the line and column numbers. 
+   They are called whenever a token is matched or whitespace is encountered. */
 void update_position() {
     column_number += yyleng;
 }

@@ -352,8 +352,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 4
-#define YY_END_OF_BUFFER 5
+#define YY_NUM_RULES 5
+#define YY_END_OF_BUFFER 6
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -363,7 +363,7 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[10] =
     {   0,
-        0,    0,    5,    3,    2,    2,    1,    1,    0
+        0,    0,    6,    4,    3,    2,    1,    1,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -442,8 +442,9 @@ char *yytext;
 #line 1 "lexer.l"
 #line 2 "lexer.l"
 #include "y.tab.h"
-#line 445 "lex.yy.c"
+#include <stdio.h>
 #line 446 "lex.yy.c"
+#line 447 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -660,9 +661,9 @@ YY_DECL
 		}
 
 	{
-#line 5 "lexer.l"
+#line 6 "lexer.l"
 
-#line 665 "lex.yy.c"
+#line 666 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -721,28 +722,35 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 6 "lexer.l"
+#line 7 "lexer.l"
 { return VARIABLE; }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 7 "lexer.l"
-{ /* ignore whitespace */ }
+#line 8 "lexer.l"
+{ return '\n'; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 8 "lexer.l"
-{ return yytext[0]; }
+#line 9 "lexer.l"
+{ /* ignore whitespace */ }
+	YY_BREAK
+case YY_STATE_EOF(INITIAL):
+#line 10 "lexer.l"
+{ return EOF_TOKEN; }  /* Return specific token for EOF */
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 9 "lexer.l"
+#line 11 "lexer.l"
+{ return yytext[0]; }
+	YY_BREAK
+case 5:
+YY_RULE_SETUP
+#line 12 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 743 "lex.yy.c"
-case YY_STATE_EOF(INITIAL):
-	yyterminate();
+#line 753 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1745,7 +1753,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 9 "lexer.l"
+#line 12 "lexer.l"
 
 
 int yywrap() {

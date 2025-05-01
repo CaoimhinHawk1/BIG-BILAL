@@ -772,19 +772,21 @@ YY_RULE_SETUP
 #line 15 "lexer.l"
 { return RPAREN; }
 	YY_BREAK
+case YY_STATE_EOF(INITIAL):
+#line 16 "lexer.l"
+{ return 0; }  /* Explicitly handle EOF */
+	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 16 "lexer.l"
+#line 17 "lexer.l"
 { return yytext[0]; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 17 "lexer.l"
+#line 18 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 785 "lex.yy.c"
-case YY_STATE_EOF(INITIAL):
-	yyterminate();
+#line 789 "lex.yy.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1787,7 +1789,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 17 "lexer.l"
+#line 18 "lexer.l"
 
 
 int yywrap() {

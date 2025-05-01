@@ -71,10 +71,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 int yylex();
 void yyerror(const char *s);
+extern char *yytext;
 
-#line 78 "y.tab.c"
+#line 80 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -118,7 +120,8 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    VARIABLE = 258                 /* VARIABLE  */
+    VARIABLE = 258,                /* VARIABLE  */
+    EOF_TOKEN = 259                /* EOF_TOKEN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -128,6 +131,7 @@ extern int yydebug;
 #define YYerror 256
 #define YYUNDEF 257
 #define VARIABLE 258
+#define EOF_TOKEN 259
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -152,11 +156,12 @@ enum yysymbol_kind_t
   YYSYMBOL_YYerror = 1,                    /* error  */
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
   YYSYMBOL_VARIABLE = 3,                   /* VARIABLE  */
-  YYSYMBOL_4_n_ = 4,                       /* '\n'  */
-  YYSYMBOL_YYACCEPT = 5,                   /* $accept  */
-  YYSYMBOL_input = 6,                      /* input  */
-  YYSYMBOL_line = 7,                       /* line  */
-  YYSYMBOL_variable = 8                    /* variable  */
+  YYSYMBOL_EOF_TOKEN = 4,                  /* EOF_TOKEN  */
+  YYSYMBOL_5_n_ = 5,                       /* '\n'  */
+  YYSYMBOL_YYACCEPT = 6,                   /* $accept  */
+  YYSYMBOL_input = 7,                      /* input  */
+  YYSYMBOL_line = 8,                       /* line  */
+  YYSYMBOL_variable = 9                    /* variable  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -484,19 +489,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  2
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   5
+#define YYLAST   6
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  5
+#define YYNTOKENS  6
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  4
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  6
+#define YYNRULES  8
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  9
+#define YYNSTATES  11
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   258
+#define YYMAXUTOK   259
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -511,7 +516,7 @@ union yyalloc
 static const yytype_int8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       4,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       5,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -535,14 +540,14 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     1,     2,     3
+       2,     2,     2,     2,     2,     2,     1,     2,     3,     4
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    11,    11,    12,    15,    16,    19
+       0,    13,    13,    14,    17,    20,    21,    25,    28
 };
 #endif
 
@@ -558,8 +563,8 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "\"end of file\"", "error", "\"invalid token\"", "VARIABLE", "'\\n'",
-  "$accept", "input", "line", "variable", YY_NULLPTR
+  "\"end of file\"", "error", "\"invalid token\"", "VARIABLE",
+  "EOF_TOKEN", "'\\n'", "$accept", "input", "line", "variable", YY_NULLPTR
 };
 
 static const char *
@@ -569,7 +574,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-3)
+#define YYPACT_NINF (-4)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -583,7 +588,8 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -3,     0,    -3,    -2,    -3,    -3,     1,    -3,    -3
+      -4,     0,    -4,    -3,    -4,    -4,    -4,    -4,     1,    -4,
+      -4
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -591,19 +597,20 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       2,     0,     1,     0,     6,     3,     0,     5,     4
+       2,     0,     1,     0,     8,     7,     5,     3,     0,     6,
+       4
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -3,    -3,    -3,    -3
+      -4,    -4,    -4,    -4
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     5,     6
+       0,     1,     7,     8
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -611,31 +618,32 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       2,     3,     7,     4,     0,     8
+       2,     3,     9,     4,     5,     6,    10
 };
 
 static const yytype_int8 yycheck[] =
 {
-       0,     1,     4,     3,    -1,     4
+       0,     1,     5,     3,     4,     5,     5
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     6,     0,     1,     3,     7,     8,     4,     4
+       0,     7,     0,     1,     3,     4,     5,     8,     9,     5,
+       5
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,     5,     6,     6,     7,     7,     8
+       0,     6,     7,     7,     8,     8,     8,     8,     9
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0,     2,     2,     2,     1
+       0,     2,     0,     2,     2,     1,     2,     1,     1
 };
 
 
@@ -1099,25 +1107,42 @@ yyreduce:
   switch (yyn)
     {
   case 4: /* line: variable '\n'  */
-#line 15 "parser.y"
-                        { printf("Valid variable identifier\n"); }
-#line 1105 "y.tab.c"
+#line 17 "parser.y"
+                        { 
+          printf("Valid variable identifier: %s\n", yytext); 
+        }
+#line 1115 "y.tab.c"
     break;
 
-  case 5: /* line: error '\n'  */
-#line 16 "parser.y"
-                        { yyerrok; }
-#line 1111 "y.tab.c"
-    break;
-
-  case 6: /* variable: VARIABLE  */
-#line 19 "parser.y"
-                        { }
-#line 1117 "y.tab.c"
-    break;
-
-
+  case 5: /* line: '\n'  */
+#line 20 "parser.y"
+                        { /* allow empty lines */ }
 #line 1121 "y.tab.c"
+    break;
+
+  case 6: /* line: error '\n'  */
+#line 21 "parser.y"
+                        { 
+          yyerrok; 
+          printf("Invalid variable identifier\n"); 
+        }
+#line 1130 "y.tab.c"
+    break;
+
+  case 7: /* line: EOF_TOKEN  */
+#line 25 "parser.y"
+                        { return 0; }
+#line 1136 "y.tab.c"
+    break;
+
+  case 8: /* variable: VARIABLE  */
+#line 28 "parser.y"
+                        { }
+#line 1142 "y.tab.c"
+    break;
+
+
+#line 1146 "y.tab.c"
 
       default: break;
     }
@@ -1310,17 +1335,19 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 21 "parser.y"
+#line 30 "parser.y"
 
-
+// Throws an error if the expression is invalid and exits the program
 void yyerror(const char *s) {
     fprintf(stderr, "Parse error: %s\n", s);
+    exit(1);
 }
 
 int main() {
+    printf("Variable Identifier Recognizer\n");
     printf("Enter variable identifiers (must start with a letter followed by letters or digits):\n");
-    printf("Press Ctrl+D (EOF) to exit\n");
-    yyparse();
+    printf("Press Ctrl+C (EOF) to exit\n");
+    int result = yyparse();
     printf("Parsing completed.\n");
-    return 0;
+    return result;
 }

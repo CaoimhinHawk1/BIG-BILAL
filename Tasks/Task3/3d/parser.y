@@ -3,44 +3,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Node types for AST
-typedef enum {
-    NODE_NUMBER,
-    NODE_IDENTIFIER,
-    NODE_BINARY_OP,
-    NODE_ASSIGN,
-    NODE_STATEMENT
-} NodeType;
+// Temporary variables counter
+int temp_counter = 0;
+int pos_counter = 0;
 
-// Node structure for AST
-typedef struct node {
-    NodeType type;
-    union {
-        int value;              // For numbers
-        char *id;               // For identifiers
-        struct {                // For binary operations
-            struct node *left;
-            struct node *right;
-            char op;
-        } binary_op;
-        struct {                // For assignments
-            char *id;
-            struct node *expr;
-        } assign;
-        struct {                // For statements
-            struct node *stmt;
-            struct node *next;
-        } stmt;
-    };
-} Node;
+// Structure to represent a 3-address code instruction
+typedef struct {
+    char op;        // Operator: +, -, *, /, =
+    char arg1[10];  // First argument
+    char arg2[10];  // Second argument
+    char result[10]; // Result
+} ThreeAddressCode;
+
+// Array to store generated code
+ThreeAddressCode code[100];
+int code_count = 0;
 
 // Function prototypes
-Node *create_number_node(int value);
-Node *create_identifier_node(char *id);
-Node *create_binary_op_node(Node *left, Node *right, char op);
-Node *create_assign_node(char *id, Node *expr);
-Node *create_statement_node(Node *stmt, Node *next);
-void print_ast(Node *node, int indent);
+char* new_temp();
+void add_code(char op, const char* arg1, const char* arg2, const char* result);
+void print_code();
 
 int yylex();
 void yyerror(const char *s);
@@ -49,156 +31,166 @@ void yyerror(const char *s);
 %union {
     int num;
     char *id;
-    struct node *ast;
+    struct {
+        char place[10];
+        int value;
+    } expr;
 }
 
 %token <num> NUMBER
 %token <id> IDENTIFIER
-%token PLUS MINUS TIMES DIVIDE ASSIGN SEMICOLON LPAREN RPAREN
+%token INT MAIN RETURN
+%token PLUS MINUS TIMES DIVIDE
+%token ASSIGN SEMICOLON COMMA
+%token LPAREN RPAREN LBRACE RBRACE
 
-%type <ast> expr term factor statement statement_list
+%type <expr> expr term factor
 
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right ASSIGN
-%precedence NEG
 
 %%
-program: statement_list {
-           printf("\nAbstract Syntax Tree:\n");
-           print_ast($1, 0);
-         }
-       ;
-
-statement_list: statement { $$ = $1; }
-              | statement_list statement {
-                  $$ = create_statement_node($1, $2);
-                }
-              ;
-
-statement: expr SEMICOLON { $$ = $1; }
-         | IDENTIFIER ASSIGN expr SEMICOLON {
-             $$ = create_assign_node($1, $3);
-           }
-         ;
-
-expr: term { $$ = $1; }
-    | expr PLUS term {
-        $$ = create_binary_op_node($1, $3, '+');
-      }
-    | expr MINUS term {
-        $$ = create_binary_op_node($1, $3, '-');
-      }
+program:
+    MAIN LPAREN RPAREN LBRACE declarations statements RBRACE
+    {
+        print_code();
+    }
     ;
 
-term: factor { $$ = $1; }
-    | term TIMES factor {
-        $$ = create_binary_op_node($1, $3, '*');
-      }
-    | term DIVIDE factor {
-        $$ = create_binary_op_node($1, $3, '/');
-      }
+declarations:
+    /* empty */ 
+    | INT declaration_list SEMICOLON declarations
     ;
 
-factor: NUMBER {
-          $$ = create_number_node($1);
-        }
-      | IDENTIFIER {
-          $$ = create_identifier_node($1);
-        }
-      | MINUS factor %prec NEG {
-          $$ = create_binary_op_node(create_number_node(0), $2, '-');
-        }
-      | LPAREN expr RPAREN { $$ = $2; }
-      ;
+declaration_list:
+    IDENTIFIER
+    {
+        /* No code for declarations */
+    }
+    | declaration_list COMMA IDENTIFIER
+    {
+        /* No code for declarations */
+    }
+    ;
+
+statements:
+    /* empty */
+    | statement statements
+    ;
+
+statement:
+    IDENTIFIER ASSIGN expr SEMICOLON
+    {
+        add_code('=', $3.place, "", $1);
+    }
+    ;
+
+expr:
+    term
+    {
+        strcpy($$.place, $1.place);
+    }
+    | expr PLUS term
+    {
+        char* temp = new_temp();
+        add_code('+', $1.place, $3.place, temp);
+        strcpy($$.place, temp);
+    }
+    | expr MINUS term
+    {
+        char* temp = new_temp();
+        add_code('-', $1.place, $3.place, temp);
+        strcpy($$.place, temp);
+    }
+    ;
+
+term:
+    factor
+    {
+        strcpy($$.place, $1.place);
+    }
+    | term TIMES factor
+    {
+        char* temp = new_temp();
+        add_code('*', $1.place, $3.place, temp);
+        strcpy($$.place, temp);
+    }
+    | term DIVIDE factor
+    {
+        char* temp = new_temp();
+        add_code('/', $1.place, $3.place, temp);
+        strcpy($$.place, temp);
+    }
+    ;
+
+factor:
+    IDENTIFIER
+    {
+        strcpy($$.place, $1);
+    }
+    | NUMBER
+    {
+        sprintf($$.place, "%d", $1);
+    }
+    | LPAREN expr RPAREN
+    {
+        strcpy($$.place, $2.place);
+    }
+    ;
+
 %%
 
-// Create a number node
-Node *create_number_node(int value) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_NUMBER;
-    node->value = value;
-    return node;
+// Create a new temporary variable
+char* new_temp() {
+    static char temp[10];
+    sprintf(temp, "t%d", temp_counter++);
+    return temp;
 }
 
-// Create an identifier node
-Node *create_identifier_node(char *id) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_IDENTIFIER;
-    node->id = id;
-    return node;
-}
-
-// Create a binary operation node
-Node *create_binary_op_node(Node *left, Node *right, char op) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_BINARY_OP;
-    node->binary_op.left = left;
-    node->binary_op.right = right;
-    node->binary_op.op = op;
-    return node;
-}
-
-// Create an assignment node
-Node *create_assign_node(char *id, Node *expr) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_ASSIGN;
-    node->assign.id = id;
-    node->assign.expr = expr;
-    return node;
-}
-
-// Create a statement node
-Node *create_statement_node(Node *stmt, Node *next) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_STATEMENT;
-    node->stmt.stmt = stmt;
-    node->stmt.next = next;
-    return node;
-}
-
-// Print the AST with proper indentation
-void print_ast(Node *node, int indent) {
-    if (node == NULL) return;
-    
-    // Print indentation
-    for (int i = 0; i < indent; i++) {
-        printf("  ");
+// Add a three-address code instruction
+void add_code(char op, const char* arg1, const char* arg2, const char* result) {
+    if (code_count >= 100) {
+        printf("Error: Code array full\n");
+        return;
     }
     
-    // Print node based on its type
-    switch (node->type) {
-        case NODE_NUMBER:
-            printf("NUMBER: %d\n", node->value);
-            break;
-        case NODE_IDENTIFIER:
-            printf("IDENTIFIER: %s\n", node->id);
-            break;
-        case NODE_BINARY_OP:
-            printf("BINARY_OP: %c\n", node->binary_op.op);
-            print_ast(node->binary_op.left, indent + 1);
-            print_ast(node->binary_op.right, indent + 1);
-            break;
-        case NODE_ASSIGN:
-            printf("ASSIGN: %s\n", node->assign.id);
-            print_ast(node->assign.expr, indent + 1);
-            break;
-        case NODE_STATEMENT:
-            printf("STATEMENT:\n");
-            print_ast(node->stmt.stmt, indent + 1);
-            print_ast(node->stmt.next, indent);
-            break;
+    code[code_count].op = op;
+    strcpy(code[code_count].arg1, arg1);
+    strcpy(code[code_count].arg2, arg2);
+    strcpy(code[code_count].result, result);
+    
+    code_count++;
+}
+
+// Print the generated three-address code
+void print_code() {
+    printf("------------------------------------\n");
+    printf("Pos Operator Arg1 Arg2 Result\n");
+    printf("------------------------------------\n");
+    
+    for (int i = 0; i < code_count; i++) {
+        // Convert operator to string for better display
+        char op_str[5] = "";
+        op_str[0] = code[i].op;
+        op_str[1] = '\0';
+        
+        printf("%-4d %-8s %-4s %-4s %-4s\n", 
+               i, op_str, 
+               code[i].arg1, 
+               code[i].arg2, 
+               code[i].result);
     }
+    
+    printf("------------------------------------\n");
+}
+
+int main() {
+    printf("Enter C code (end with Ctrl+D):\n");
+    yyparse();
+    return 0;
 }
 
 void yyerror(const char *s) {
     fprintf(stderr, "Parse error: %s\n", s);
-}
-
-int main() {
-    printf("Enter expressions or assignments (end with semicolons):\n");
-    printf("Example: x = 10 + 5; y = x * 2;\n");
-    printf("Press Ctrl+D (EOF) to exit\n");
-    yyparse();
-    return 0;
 }

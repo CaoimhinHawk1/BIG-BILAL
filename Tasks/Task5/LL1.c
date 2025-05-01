@@ -18,6 +18,7 @@ typedef struct {
 } Rule;
 
 // Grammar structure
+// Represents the grammar with its rules, FIRST and FOLLOW sets, and parse table
 typedef struct {
     Rule rules[MAX_RULES];
     int rule_count;
@@ -27,6 +28,7 @@ typedef struct {
 } Grammar;
 
 // Stack for LL(1) parsing
+// Used to keep track of the parsing process
 typedef struct {
     char data[MAX_STACK_SIZE];
     int top;
@@ -74,6 +76,14 @@ int main(int argc, char* argv[]) {
     printf("Enter input string (end with %c): ", END_MARKER);
     scanf("%s", input);
     
+    // Make sure the input ends with the end marker
+    size_t len = strlen(input);
+    if (len == 0 || input[len-1] != END_MARKER) {
+        char temp[MAX_INPUT_SIZE];
+        strcpy(temp, input);
+        sprintf(input, "%s%c", temp, END_MARKER);
+    }
+    
     if (parse_input(input)) {
         printf("Input accepted!\n");
     } else {
@@ -84,11 +94,13 @@ int main(int argc, char* argv[]) {
 }
 
 // Convert a non-terminal to its index
+// This function converts a character representing a non-terminal (A-Z) to its corresponding index (0-25).
 int non_terminal_to_index(char c) {
     return c - 'A';
 }
 
 // Convert a terminal to its index
+// This function converts a character representing a terminal (a-z) to its corresponding index (0-25).
 int terminal_to_index(char c) {
     if (c == EPSILON) return MAX_TERMINALS; // Epsilon is the last index
     if (c == END_MARKER) return MAX_TERMINALS; // End marker is the last index
@@ -111,6 +123,7 @@ void stack_init() {
 }
 
 // Push an element onto the stack
+// This function adds a character to the top of the stack and increments the top index.
 void stack_push(char c) {
     if (stack.top == MAX_STACK_SIZE - 1) {
         printf("Stack overflow!\n");
@@ -129,6 +142,7 @@ char stack_pop() {
 }
 
 // Peek at the top element of the stack
+// This function returns the top element of the stack without removing it.
 char stack_peek() {
     if (stack.top == -1) {
         printf("Stack is empty!\n");
@@ -143,6 +157,8 @@ bool stack_is_empty() {
 }
 
 // Read grammar rules from a file
+// This function reads the grammar rules from a file and populates the grammar structure.
+// It also initializes the FIRST and FOLLOW sets and the parse table.
 void read_grammar(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -202,6 +218,8 @@ void read_grammar(const char* filename) {
 }
 
 // Compute the FIRST set for all non-terminals
+// This function computes the FIRST set for all non-terminals in the grammar using the rules defined in the grammar.
+// It iterates through each rule and checks if the non-terminal can derive a terminal or epsilon.
 void compute_first_sets() {
     bool changed;
     do {
@@ -277,6 +295,8 @@ void compute_first_sets() {
 }
 
 // Compute the FIRST set of a string
+// This function computes the FIRST set of a string (sequence of symbols) and returns true if epsilon is in the FIRST set.
+// It also updates the result array with the terminals found in the FIRST set.
 bool compute_first_of_string(char* str, bool* result) {
     bool contains_epsilon = true;
     
@@ -316,6 +336,10 @@ bool compute_first_of_string(char* str, bool* result) {
 }
 
 // Compute the FOLLOW set for all non-terminals
+// This function computes the FOLLOW set for all non-terminals in the grammar using the rules defined in the grammar.
+// It iterates through each rule and checks if the non-terminal can derive a terminal or epsilon.
+// It also checks if the non-terminal is followed by another non-terminal or terminal.
+// If it is followed by a terminal, it adds that terminal to the FOLLOW set of the non-terminal.
 void compute_follow_sets() {
     bool changed;
     do {
@@ -334,7 +358,7 @@ void compute_follow_sets() {
                     
                     // If this is the last symbol, add FOLLOW(lhs) to FOLLOW(rhs[j])
                     if (rhs[j+1] == '\0') {
-                        for (int k = 0; k < MAX_TERMINALS + 1; k++) {
+                        for (int k = 0; k <= MAX_TERMINALS; k++) {
                             if (grammar.follow_sets[lhs_idx][k] && !grammar.follow_sets[nt_idx][k]) {
                                 grammar.follow_sets[nt_idx][k] = true;
                                 changed = true;
@@ -355,7 +379,7 @@ void compute_follow_sets() {
                         
                         // If epsilon is in FIRST(beta), add FOLLOW(lhs) to FOLLOW(rhs[j])
                         if (has_epsilon) {
-                            for (int k = 0; k < MAX_TERMINALS + 1; k++) {
+                            for (int k = 0; k <= MAX_TERMINALS; k++) {
                                 if (grammar.follow_sets[lhs_idx][k] && !grammar.follow_sets[nt_idx][k]) {
                                     grammar.follow_sets[nt_idx][k] = true;
                                     changed = true;
@@ -370,6 +394,10 @@ void compute_follow_sets() {
 }
 
 // Construct LL(1) parsing table
+// This function constructs the LL(1) parsing table based on the grammar rules and FIRST and FOLLOW sets.
+// It checks for conflicts in the parsing table and prints warnings if the grammar is not LL(1).
+// It fills the parsing table with the appropriate rule indices for each non-terminal and terminal combination.
+// The parsing table is used during the parsing process to determine which rule to apply based on the current input symbol.
 void construct_parse_table() {
     // For each production rule
     for (int i = 0; i < grammar.rule_count; i++) {
@@ -407,7 +435,7 @@ void construct_parse_table() {
             if (has_epsilon) {
                 for (int j = 0; j <= MAX_TERMINALS; j++) {
                     if (grammar.follow_sets[lhs_idx][j]) {
-                        if (grammar.parse_table[lhs_idx][j] != -1) {
+                        if (grammar.parse_table[lhs_idx][j] != -1 && j != MAX_TERMINALS) {
                             printf("Warning: Grammar is not LL(1). Conflict at [%c, %c]\n", lhs, j + 'a');
                         }
                         grammar.parse_table[lhs_idx][j] = i;
@@ -419,6 +447,9 @@ void construct_parse_table() {
 }
 
 // Parse input string using LL(1) parsing table
+// This function uses the LL(1) parsing table to parse the input string and check if it is valid according to the grammar.
+// It uses a stack to keep track of the parsing process and prints the parsing steps.
+// It returns true if the input is accepted, false otherwise.
 bool parse_input(const char* input) {
     stack_init();
     
@@ -426,18 +457,8 @@ bool parse_input(const char* input) {
     stack_push(END_MARKER);
     stack_push(grammar.rules[0].lhs);  // Start symbol
     
-    // Add end marker to input if not already present
-    char full_input[MAX_INPUT_SIZE + 2];
-    strcpy(full_input, input);
-    
-    int input_len = strlen(full_input);
-    if (full_input[input_len - 1] != END_MARKER) {
-        full_input[input_len] = END_MARKER;
-        full_input[input_len + 1] = '\0';
-    }
-    
     int input_pos = 0;
-    char current_input = full_input[input_pos];
+    char current_input = input[input_pos];
     
     printf("\nParsing Steps:\n");
     printf("Stack\t\tInput\t\tAction\n");
@@ -447,13 +468,13 @@ bool parse_input(const char* input) {
         char top = stack_peek();
         
         // Print current state
-        printf("%-10s\t%-10s\t", stack.data, &full_input[input_pos]);
+        printf("%-10s\t%-10s\t", stack.data, &input[input_pos]);
         
         if (top == current_input) {
             // If top matches current input, consume both
             stack_pop();
             input_pos++;
-            current_input = full_input[input_pos];
+            current_input = input[input_pos];
             printf("Match: %c\n", top);
         } else if (is_terminal(top)) {
             // If top is terminal but doesn't match, error
@@ -491,5 +512,5 @@ bool parse_input(const char* input) {
     }
     
     // If we've consumed all input, success
-    return current_input == END_MARKER;
+    return current_input == END_MARKER && input[input_pos+1] == '\0';
 }

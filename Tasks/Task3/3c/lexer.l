@@ -13,6 +13,7 @@
 "/"                    { return DIVIDE; }
 "("                    { return LPAREN; }
 ")"                    { return RPAREN; }
+<<EOF>>                { return 0; }  /* Explicitly handle EOF */
 .                      { return yytext[0]; }
 %%
 

@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#define MAX_TERMINALS 10
+#define MAX_TERMINALS 12
 #define MAX_STACK_SIZE 100
 #define MAX_INPUT_SIZE 100
 
@@ -43,20 +43,34 @@ char stack_peek();
 bool stack_is_empty();
 bool parse_input(const char* input);
 void print_precedence_table();
+char* preprocess_input(const char* input);
 
 int main() {
     initialize_terminals();
     initialize_precedence_table();
     print_precedence_table();
     
-    char input[MAX_INPUT_SIZE];
-    printf("Enter expression (e.g., id+id*id): ");
-    scanf("%s", input);
-    
-    if (parse_input(input)) {
-        printf("Input accepted!\n");
-    } else {
-        printf("Input rejected!\n");
+    while (1) {
+        char input[MAX_INPUT_SIZE];
+        printf("\nEnter expression (e.g., id+id*id): ");
+        scanf("%s", input);
+        
+        // Check for exit condition
+        if (strcmp(input, "exit") == 0 || strcmp(input, "quit") == 0) {
+            break;
+        }
+        
+        // Preprocess input to standardize it
+        char* processed_input = preprocess_input(input);
+        printf("\nProcessed input: %s\n", processed_input);
+        
+        if (parse_input(processed_input)) {
+            printf("Input accepted!\n");
+        } else {
+            printf("Input rejected!\n");
+        }
+        
+        free(processed_input);
     }
     
     return 0;
@@ -64,14 +78,16 @@ int main() {
 
 // Initialize terminal symbols
 void initialize_terminals() {
-    // For a simple expression grammar with +, *, (, ), id
+    // For expression grammar with +, -, *, /, (, ), id
     terminals[0] = '+';
-    terminals[1] = '*';
-    terminals[2] = '(';
-    terminals[3] = ')';
-    terminals[4] = 'i';  // Using 'i' to represent identifier
-    terminals[5] = ';';  // End marker
-    terminal_count = 6;
+    terminals[1] = '-';
+    terminals[2] = '*';
+    terminals[3] = '/';
+    terminals[4] = '(';
+    terminals[5] = ')';
+    terminals[6] = 'i';  // Using 'i' to represent identifier
+    terminals[7] = '$';  // End marker
+    terminal_count = 8;
 }
 
 // Initialize precedence table based on grammar rules
@@ -84,22 +100,26 @@ void initialize_precedence_table() {
     }
     
     // For a grammar with rules:
-    // E -> E+T | T
-    // T -> T*F | F
+    // E -> E+T | E-T | T
+    // T -> T*F | T/F | F
     // F -> (E) | id
     
     // Set precedence relations
-    // id has higher precedence than operators
-    int id_idx = get_terminal_index('i');
+    // Get indices for each terminal
     int plus_idx = get_terminal_index('+');
+    int minus_idx = get_terminal_index('-');
     int mult_idx = get_terminal_index('*');
+    int div_idx = get_terminal_index('/');
     int lparen_idx = get_terminal_index('(');
     int rparen_idx = get_terminal_index(')');
-    int end_idx = get_terminal_index(')');
+    int id_idx = get_terminal_index('i');
+    int end_idx = get_terminal_index('$');
     
-    // id relations
+    // id relations - id has higher precedence than operators
     precedence_table[id_idx][plus_idx] = GREATER_THAN;
+    precedence_table[id_idx][minus_idx] = GREATER_THAN;
     precedence_table[id_idx][mult_idx] = GREATER_THAN;
+    precedence_table[id_idx][div_idx] = GREATER_THAN;
     precedence_table[id_idx][rparen_idx] = GREATER_THAN;
     precedence_table[id_idx][end_idx] = GREATER_THAN;
     
@@ -107,26 +127,56 @@ void initialize_precedence_table() {
     precedence_table[plus_idx][id_idx] = LESS_THAN;
     precedence_table[plus_idx][lparen_idx] = LESS_THAN;
     precedence_table[plus_idx][mult_idx] = LESS_THAN;
+    precedence_table[plus_idx][div_idx] = LESS_THAN;
+    precedence_table[plus_idx][minus_idx] = GREATER_THAN;
+    precedence_table[plus_idx][plus_idx] = GREATER_THAN;
     precedence_table[plus_idx][rparen_idx] = GREATER_THAN;
     precedence_table[plus_idx][end_idx] = GREATER_THAN;
+    
+    // - relations (same as +)
+    precedence_table[minus_idx][id_idx] = LESS_THAN;
+    precedence_table[minus_idx][lparen_idx] = LESS_THAN;
+    precedence_table[minus_idx][mult_idx] = LESS_THAN;
+    precedence_table[minus_idx][div_idx] = LESS_THAN;
+    precedence_table[minus_idx][minus_idx] = GREATER_THAN;
+    precedence_table[minus_idx][plus_idx] = GREATER_THAN;
+    precedence_table[minus_idx][rparen_idx] = GREATER_THAN;
+    precedence_table[minus_idx][end_idx] = GREATER_THAN;
     
     // * relations
     precedence_table[mult_idx][id_idx] = LESS_THAN;
     precedence_table[mult_idx][lparen_idx] = LESS_THAN;
     precedence_table[mult_idx][plus_idx] = GREATER_THAN;
+    precedence_table[mult_idx][minus_idx] = GREATER_THAN;
+    precedence_table[mult_idx][mult_idx] = GREATER_THAN;
+    precedence_table[mult_idx][div_idx] = GREATER_THAN;
     precedence_table[mult_idx][rparen_idx] = GREATER_THAN;
     precedence_table[mult_idx][end_idx] = GREATER_THAN;
+    
+    // / relations (same as *)
+    precedence_table[div_idx][id_idx] = LESS_THAN;
+    precedence_table[div_idx][lparen_idx] = LESS_THAN;
+    precedence_table[div_idx][plus_idx] = GREATER_THAN;
+    precedence_table[div_idx][minus_idx] = GREATER_THAN;
+    precedence_table[div_idx][mult_idx] = GREATER_THAN;
+    precedence_table[div_idx][div_idx] = GREATER_THAN;
+    precedence_table[div_idx][rparen_idx] = GREATER_THAN;
+    precedence_table[div_idx][end_idx] = GREATER_THAN;
     
     // ( relations
     precedence_table[lparen_idx][id_idx] = LESS_THAN;
     precedence_table[lparen_idx][lparen_idx] = LESS_THAN;
     precedence_table[lparen_idx][plus_idx] = LESS_THAN;
+    precedence_table[lparen_idx][minus_idx] = LESS_THAN;
     precedence_table[lparen_idx][mult_idx] = LESS_THAN;
+    precedence_table[lparen_idx][div_idx] = LESS_THAN;
     precedence_table[lparen_idx][rparen_idx] = EQUAL;
     
     // ) relations
     precedence_table[rparen_idx][plus_idx] = GREATER_THAN;
+    precedence_table[rparen_idx][minus_idx] = GREATER_THAN;
     precedence_table[rparen_idx][mult_idx] = GREATER_THAN;
+    precedence_table[rparen_idx][div_idx] = GREATER_THAN;
     precedence_table[rparen_idx][rparen_idx] = GREATER_THAN;
     precedence_table[rparen_idx][end_idx] = GREATER_THAN;
     
@@ -134,7 +184,9 @@ void initialize_precedence_table() {
     precedence_table[end_idx][id_idx] = LESS_THAN;
     precedence_table[end_idx][lparen_idx] = LESS_THAN;
     precedence_table[end_idx][plus_idx] = LESS_THAN;
+    precedence_table[end_idx][minus_idx] = LESS_THAN;
     precedence_table[end_idx][mult_idx] = LESS_THAN;
+    precedence_table[end_idx][div_idx] = LESS_THAN;
 }
 
 // Get index of terminal in the terminals array
@@ -232,10 +284,51 @@ void print_precedence_table() {
     printf("\n");
 }
 
+// Preprocess input to convert operands to 'i' and ensure end marker
+// This function replaces all identifiers and numbers with 'i' and adds a '$' at the end.
+// It also handles the case where identifiers may contain digits or letters.
+// The function returns a dynamically allocated string that should be freed by the caller.
+char* preprocess_input(const char* input) {
+    // Allocate space for processed input
+    char* processed = (char*)malloc(strlen(input) * 2 + 2); // Extra space for $ and potential i replacements
+    int j = 0;
+    
+    // Process each character
+    for (int i = 0; input[i]; i++) {
+        // Handle identifiers, variables and numbers
+        if (isalnum(input[i]) && 
+            input[i] != '+' && input[i] != '-' && 
+            input[i] != '*' && input[i] != '/' && 
+            input[i] != '(' && input[i] != ')' && 
+            input[i] != '$') {
+            
+            processed[j++] = 'i'; // Replace all variables/numbers with 'i'
+            
+            // Skip the rest of this identifier/number
+            while (isalnum(input[i+1]) || input[i+1] == '.') {
+                i++;
+            }
+        } else {
+            processed[j++] = input[i];
+        }
+    }
+    
+    // Add end marker if not already present
+    if (j == 0 || processed[j-1] != '$') {
+        processed[j++] = '$';
+    }
+    
+    processed[j] = '\0';
+    return processed;
+}
+
 // Parse input using operator precedence parsing
+// This function uses a stack to parse the input string based on operator precedence rules.
+// It prints the parsing steps and returns true if the input is accepted, false otherwise.
+// The function assumes the input is preprocessed to replace identifiers with 'i' and ends with '$'.
 bool parse_input(const char* input) {
     stack_init();
-    stack_push(')');  // Bottom of stack marker
+    stack_push('$');  // Bottom of stack marker
     
     char input_buffer[MAX_INPUT_SIZE + 2];
     strcpy(input_buffer, input);
@@ -266,10 +359,10 @@ bool parse_input(const char* input) {
     char current_input = processed_input[input_pos];
     
     while (true) {
-        char stack_top = stack_peek();
-        
         // Print current state
         printf("%-10s\t%-10s\t", stack.data, &processed_input[input_pos]);
+        
+        char stack_top = stack_peek();
         
         // Get precedence relation
         Precedence relation = get_precedence(stack_top, current_input);
@@ -284,11 +377,19 @@ bool parse_input(const char* input) {
             // Reduce: Pop symbols from stack
             char handle[MAX_STACK_SIZE];
             int handle_idx = 0;
+            
+            // Pop the top element
             char popped = stack_pop();
             handle[handle_idx++] = popped;
             
             // Keep popping until we find a precedence relation that is < or =
             while (true) {
+                // Check if stack is empty (shouldn't happen in valid parsing)
+                if (stack_is_empty()) {
+                    printf("Error: Stack underflow during reduction\n");
+                    return false;
+                }
+                
                 stack_top = stack_peek();
                 relation = get_precedence(stack_top, handle[0]);
                 
@@ -309,7 +410,7 @@ bool parse_input(const char* input) {
             handle[handle_idx] = '\0';
             
             printf("Reduce: %s\n", handle);
-        } else if (stack_top == ' && current_input == ') {
+        } else if (stack_top == '$' && current_input == '$') {
             // Acceptance
             printf("Accept\n");
             return true;
@@ -320,5 +421,5 @@ bool parse_input(const char* input) {
         }
     }
     
-    return false;  // Should not reach here
+    return false; 
 }

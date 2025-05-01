@@ -12,7 +12,9 @@ extern int yylval;
 "/"         { return DIVIDE; }
 "("         { return LPAREN; }
 ")"         { return RPAREN; }
-[ \t\n]     { /* ignore whitespace */ }
+\n          { return '\n'; }
+[ \t]       { /* ignore whitespace */ }
+<<EOF>>     { return 0; }  /* Explicitly handle EOF */
 .           { return yytext[0]; }
 %%
 

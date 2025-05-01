@@ -73,49 +73,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Node types for AST
-typedef enum {
-    NODE_NUMBER,
-    NODE_IDENTIFIER,
-    NODE_BINARY_OP,
-    NODE_ASSIGN,
-    NODE_STATEMENT
-} NodeType;
+// Temporary variables counter
+int temp_counter = 0;
+int pos_counter = 0;
 
-// Node structure for AST
-typedef struct node {
-    NodeType type;
-    union {
-        int value;              // For numbers
-        char *id;               // For identifiers
-        struct {                // For binary operations
-            struct node *left;
-            struct node *right;
-            char op;
-        } binary_op;
-        struct {                // For assignments
-            char *id;
-            struct node *expr;
-        } assign;
-        struct {                // For statements
-            struct node *stmt;
-            struct node *next;
-        } stmt;
-    };
-} Node;
+// Structure to represent a 3-address code instruction
+typedef struct {
+    char op;        // Operator: +, -, *, /, =
+    char arg1[10];  // First argument
+    char arg2[10];  // Second argument
+    char result[10]; // Result
+} ThreeAddressCode;
+
+// Array to store generated code
+ThreeAddressCode code[100];
+int code_count = 0;
 
 // Function prototypes
-Node *create_number_node(int value);
-Node *create_identifier_node(char *id);
-Node *create_binary_op_node(Node *left, Node *right, char op);
-Node *create_assign_node(char *id, Node *expr);
-Node *create_statement_node(Node *stmt, Node *next);
-void print_ast(Node *node, int indent);
+char* new_temp();
+void add_code(char op, const char* arg1, const char* arg2, const char* result);
+void print_code();
 
 int yylex();
 void yyerror(const char *s);
 
-#line 119 "y.tab.c"
+#line 101 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -161,15 +143,20 @@ extern int yydebug;
     YYUNDEF = 257,                 /* "invalid token"  */
     NUMBER = 258,                  /* NUMBER  */
     IDENTIFIER = 259,              /* IDENTIFIER  */
-    PLUS = 260,                    /* PLUS  */
-    MINUS = 261,                   /* MINUS  */
-    TIMES = 262,                   /* TIMES  */
-    DIVIDE = 263,                  /* DIVIDE  */
-    ASSIGN = 264,                  /* ASSIGN  */
-    SEMICOLON = 265,               /* SEMICOLON  */
-    LPAREN = 266,                  /* LPAREN  */
-    RPAREN = 267,                  /* RPAREN  */
-    NEG = 268                      /* NEG  */
+    INT = 260,                     /* INT  */
+    MAIN = 261,                    /* MAIN  */
+    RETURN = 262,                  /* RETURN  */
+    PLUS = 263,                    /* PLUS  */
+    MINUS = 264,                   /* MINUS  */
+    TIMES = 265,                   /* TIMES  */
+    DIVIDE = 266,                  /* DIVIDE  */
+    ASSIGN = 267,                  /* ASSIGN  */
+    SEMICOLON = 268,               /* SEMICOLON  */
+    COMMA = 269,                   /* COMMA  */
+    LPAREN = 270,                  /* LPAREN  */
+    RPAREN = 271,                  /* RPAREN  */
+    LBRACE = 272,                  /* LBRACE  */
+    RBRACE = 273                   /* RBRACE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -180,27 +167,35 @@ extern int yydebug;
 #define YYUNDEF 257
 #define NUMBER 258
 #define IDENTIFIER 259
-#define PLUS 260
-#define MINUS 261
-#define TIMES 262
-#define DIVIDE 263
-#define ASSIGN 264
-#define SEMICOLON 265
-#define LPAREN 266
-#define RPAREN 267
-#define NEG 268
+#define INT 260
+#define MAIN 261
+#define RETURN 262
+#define PLUS 263
+#define MINUS 264
+#define TIMES 265
+#define DIVIDE 266
+#define ASSIGN 267
+#define SEMICOLON 268
+#define COMMA 269
+#define LPAREN 270
+#define RPAREN 271
+#define LBRACE 272
+#define RBRACE 273
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 49 "parser.y"
+#line 31 "parser.y"
 
     int num;
     char *id;
-    struct node *ast;
+    struct {
+        char place[10];
+        int value;
+    } expr;
 
-#line 204 "y.tab.c"
+#line 199 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -225,22 +220,29 @@ enum yysymbol_kind_t
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
   YYSYMBOL_NUMBER = 3,                     /* NUMBER  */
   YYSYMBOL_IDENTIFIER = 4,                 /* IDENTIFIER  */
-  YYSYMBOL_PLUS = 5,                       /* PLUS  */
-  YYSYMBOL_MINUS = 6,                      /* MINUS  */
-  YYSYMBOL_TIMES = 7,                      /* TIMES  */
-  YYSYMBOL_DIVIDE = 8,                     /* DIVIDE  */
-  YYSYMBOL_ASSIGN = 9,                     /* ASSIGN  */
-  YYSYMBOL_SEMICOLON = 10,                 /* SEMICOLON  */
-  YYSYMBOL_LPAREN = 11,                    /* LPAREN  */
-  YYSYMBOL_RPAREN = 12,                    /* RPAREN  */
-  YYSYMBOL_NEG = 13,                       /* NEG  */
-  YYSYMBOL_YYACCEPT = 14,                  /* $accept  */
-  YYSYMBOL_program = 15,                   /* program  */
-  YYSYMBOL_statement_list = 16,            /* statement_list  */
-  YYSYMBOL_statement = 17,                 /* statement  */
-  YYSYMBOL_expr = 18,                      /* expr  */
-  YYSYMBOL_term = 19,                      /* term  */
-  YYSYMBOL_factor = 20                     /* factor  */
+  YYSYMBOL_INT = 5,                        /* INT  */
+  YYSYMBOL_MAIN = 6,                       /* MAIN  */
+  YYSYMBOL_RETURN = 7,                     /* RETURN  */
+  YYSYMBOL_PLUS = 8,                       /* PLUS  */
+  YYSYMBOL_MINUS = 9,                      /* MINUS  */
+  YYSYMBOL_TIMES = 10,                     /* TIMES  */
+  YYSYMBOL_DIVIDE = 11,                    /* DIVIDE  */
+  YYSYMBOL_ASSIGN = 12,                    /* ASSIGN  */
+  YYSYMBOL_SEMICOLON = 13,                 /* SEMICOLON  */
+  YYSYMBOL_COMMA = 14,                     /* COMMA  */
+  YYSYMBOL_LPAREN = 15,                    /* LPAREN  */
+  YYSYMBOL_RPAREN = 16,                    /* RPAREN  */
+  YYSYMBOL_LBRACE = 17,                    /* LBRACE  */
+  YYSYMBOL_RBRACE = 18,                    /* RBRACE  */
+  YYSYMBOL_YYACCEPT = 19,                  /* $accept  */
+  YYSYMBOL_program = 20,                   /* program  */
+  YYSYMBOL_declarations = 21,              /* declarations  */
+  YYSYMBOL_declaration_list = 22,          /* declaration_list  */
+  YYSYMBOL_statements = 23,                /* statements  */
+  YYSYMBOL_statement = 24,                 /* statement  */
+  YYSYMBOL_expr = 25,                      /* expr  */
+  YYSYMBOL_term = 26,                      /* term  */
+  YYSYMBOL_factor = 27                     /* factor  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -566,21 +568,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  15
+#define YYFINAL  4
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   28
+#define YYLAST   30
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  14
+#define YYNTOKENS  19
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  7
+#define YYNNTS  9
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  16
+#define YYNRULES  18
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  29
+#define YYNSTATES  38
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   268
+#define YYMAXUTOK   273
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -620,15 +622,16 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7,     8,     9,    10,    11,    12,    13
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    67,    67,    73,    74,    79,    80,    85,    86,    89,
-      94,    95,    98,   103,   106,   109,   112
+       0,    55,    55,    61,    63,    67,    71,    77,    79,    83,
+      90,    94,   100,   109,   113,   119,   128,   132,   136
 };
 #endif
 
@@ -645,8 +648,9 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
 static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "NUMBER", "IDENTIFIER",
-  "PLUS", "MINUS", "TIMES", "DIVIDE", "ASSIGN", "SEMICOLON", "LPAREN",
-  "RPAREN", "NEG", "$accept", "program", "statement_list", "statement",
+  "INT", "MAIN", "RETURN", "PLUS", "MINUS", "TIMES", "DIVIDE", "ASSIGN",
+  "SEMICOLON", "COMMA", "LPAREN", "RPAREN", "LBRACE", "RBRACE", "$accept",
+  "program", "declarations", "declaration_list", "statements", "statement",
   "expr", "term", "factor", YY_NULLPTR
 };
 
@@ -657,7 +661,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-4)
+#define YYPACT_NINF (-15)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -671,9 +675,10 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -2,    -4,    18,     2,     2,     7,    -2,    -4,     6,    15,
-      -4,     2,    -4,    -4,     9,    -4,    -4,     2,     2,    -4,
-       2,     2,    14,    -4,    15,    15,    -4,    -4,    -4
+       2,     4,    11,     5,   -15,     6,    15,    18,    20,   -15,
+      -7,    13,     8,    20,    15,    23,    -3,   -15,   -15,   -15,
+     -15,   -15,   -15,    -3,    -4,     3,   -15,    -6,    -3,    -3,
+     -15,    -3,    -3,   -15,     3,     3,   -15,   -15
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -681,21 +686,22 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,    13,    14,     0,     0,     0,     2,     3,     0,     7,
-      10,     0,    14,    15,     0,     1,     4,     0,     0,     5,
-       0,     0,     0,    16,     8,     9,    11,    12,     6
+       0,     0,     0,     0,     1,     0,     3,     0,     7,     5,
+       0,     0,     0,     7,     3,     0,     0,     2,     8,     4,
+       6,    17,    16,     0,     0,    10,    13,     0,     0,     0,
+       9,     0,     0,    18,    11,    12,    14,    15
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -4,    -4,    -4,    22,    -1,     8,    -3
+     -15,   -15,    14,   -15,    16,   -15,     7,   -13,   -14
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     5,     6,     7,     8,     9,    10
+       0,     2,     8,    10,    12,    13,    24,    25,    26
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -703,39 +709,42 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      13,     1,     2,    14,     3,     1,    12,    15,     3,     4,
-      22,    17,    18,     4,    17,    18,    19,    26,    27,    17,
-      18,    23,    20,    21,    28,    24,    25,    11,    16
+      21,    22,    28,    29,    28,    29,    14,    15,     1,    30,
+      33,     4,    23,    31,    32,    34,    35,    36,    37,     3,
+       7,     5,     9,     6,    11,    16,    17,    20,    19,    18,
+      27
 };
 
 static const yytype_int8 yycheck[] =
 {
-       3,     3,     4,     4,     6,     3,     4,     0,     6,    11,
-      11,     5,     6,    11,     5,     6,    10,    20,    21,     5,
-       6,    12,     7,     8,    10,    17,    18,     9,     6
+       3,     4,     8,     9,     8,     9,    13,    14,     6,    13,
+      16,     0,    15,    10,    11,    28,    29,    31,    32,    15,
+       5,    16,     4,    17,     4,    12,    18,     4,    14,    13,
+      23
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,     4,     6,    11,    15,    16,    17,    18,    19,
-      20,     9,     4,    20,    18,     0,    17,     5,     6,    10,
-       7,     8,    18,    12,    19,    19,    20,    20,    10
+       0,     6,    20,    15,     0,    16,    17,     5,    21,     4,
+      22,     4,    23,    24,    13,    14,    12,    18,    23,    21,
+       4,     3,     4,    15,    25,    26,    27,    25,     8,     9,
+      13,    10,    11,    16,    26,    26,    27,    27
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    14,    15,    16,    16,    17,    17,    18,    18,    18,
-      19,    19,    19,    20,    20,    20,    20
+       0,    19,    20,    21,    21,    22,    22,    23,    23,    24,
+      25,    25,    25,    26,    26,    26,    27,    27,    27
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     1,     2,     2,     4,     1,     3,     3,
-       1,     3,     3,     1,     1,     2,     3
+       0,     2,     7,     0,     4,     1,     3,     0,     2,     4,
+       1,     3,     3,     1,     3,     3,     1,     1,     3
 };
 
 
@@ -1198,119 +1207,120 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* program: statement_list  */
-#line 67 "parser.y"
-                        {
-           printf("\nAbstract Syntax Tree:\n");
-           print_ast((yyvsp[0].ast), 0);
-         }
-#line 1208 "y.tab.c"
+  case 2: /* program: MAIN LPAREN RPAREN LBRACE declarations statements RBRACE  */
+#line 56 "parser.y"
+    {
+        print_code();
+    }
+#line 1216 "y.tab.c"
     break;
 
-  case 3: /* statement_list: statement  */
-#line 73 "parser.y"
-                          { (yyval.ast) = (yyvsp[0].ast); }
-#line 1214 "y.tab.c"
+  case 5: /* declaration_list: IDENTIFIER  */
+#line 68 "parser.y"
+    {
+        /* No code for declarations */
+    }
+#line 1224 "y.tab.c"
     break;
 
-  case 4: /* statement_list: statement_list statement  */
-#line 74 "parser.y"
-                                         {
-                  (yyval.ast) = create_statement_node((yyvsp[-1].ast), (yyvsp[0].ast));
-                }
-#line 1222 "y.tab.c"
+  case 6: /* declaration_list: declaration_list COMMA IDENTIFIER  */
+#line 72 "parser.y"
+    {
+        /* No code for declarations */
+    }
+#line 1232 "y.tab.c"
     break;
 
-  case 5: /* statement: expr SEMICOLON  */
-#line 79 "parser.y"
-                          { (yyval.ast) = (yyvsp[-1].ast); }
-#line 1228 "y.tab.c"
+  case 9: /* statement: IDENTIFIER ASSIGN expr SEMICOLON  */
+#line 84 "parser.y"
+    {
+        add_code('=', (yyvsp[-1].expr).place, "", (yyvsp[-3].id));
+    }
+#line 1240 "y.tab.c"
     break;
 
-  case 6: /* statement: IDENTIFIER ASSIGN expr SEMICOLON  */
-#line 80 "parser.y"
-                                            {
-             (yyval.ast) = create_assign_node((yyvsp[-3].id), (yyvsp[-1].ast));
-           }
-#line 1236 "y.tab.c"
+  case 10: /* expr: term  */
+#line 91 "parser.y"
+    {
+        strcpy((yyval.expr).place, (yyvsp[0].expr).place);
+    }
+#line 1248 "y.tab.c"
     break;
 
-  case 7: /* expr: term  */
-#line 85 "parser.y"
-           { (yyval.ast) = (yyvsp[0].ast); }
-#line 1242 "y.tab.c"
-    break;
-
-  case 8: /* expr: expr PLUS term  */
-#line 86 "parser.y"
-                     {
-        (yyval.ast) = create_binary_op_node((yyvsp[-2].ast), (yyvsp[0].ast), '+');
-      }
-#line 1250 "y.tab.c"
-    break;
-
-  case 9: /* expr: expr MINUS term  */
-#line 89 "parser.y"
-                      {
-        (yyval.ast) = create_binary_op_node((yyvsp[-2].ast), (yyvsp[0].ast), '-');
-      }
+  case 11: /* expr: expr PLUS term  */
+#line 95 "parser.y"
+    {
+        char* temp = new_temp();
+        add_code('+', (yyvsp[-2].expr).place, (yyvsp[0].expr).place, temp);
+        strcpy((yyval.expr).place, temp);
+    }
 #line 1258 "y.tab.c"
     break;
 
-  case 10: /* term: factor  */
-#line 94 "parser.y"
-             { (yyval.ast) = (yyvsp[0].ast); }
-#line 1264 "y.tab.c"
+  case 12: /* expr: expr MINUS term  */
+#line 101 "parser.y"
+    {
+        char* temp = new_temp();
+        add_code('-', (yyvsp[-2].expr).place, (yyvsp[0].expr).place, temp);
+        strcpy((yyval.expr).place, temp);
+    }
+#line 1268 "y.tab.c"
     break;
 
-  case 11: /* term: term TIMES factor  */
-#line 95 "parser.y"
-                        {
-        (yyval.ast) = create_binary_op_node((yyvsp[-2].ast), (yyvsp[0].ast), '*');
-      }
-#line 1272 "y.tab.c"
+  case 13: /* term: factor  */
+#line 110 "parser.y"
+    {
+        strcpy((yyval.expr).place, (yyvsp[0].expr).place);
+    }
+#line 1276 "y.tab.c"
     break;
 
-  case 12: /* term: term DIVIDE factor  */
-#line 98 "parser.y"
-                         {
-        (yyval.ast) = create_binary_op_node((yyvsp[-2].ast), (yyvsp[0].ast), '/');
-      }
-#line 1280 "y.tab.c"
+  case 14: /* term: term TIMES factor  */
+#line 114 "parser.y"
+    {
+        char* temp = new_temp();
+        add_code('*', (yyvsp[-2].expr).place, (yyvsp[0].expr).place, temp);
+        strcpy((yyval.expr).place, temp);
+    }
+#line 1286 "y.tab.c"
     break;
 
-  case 13: /* factor: NUMBER  */
-#line 103 "parser.y"
-               {
-          (yyval.ast) = create_number_node((yyvsp[0].num));
-        }
-#line 1288 "y.tab.c"
-    break;
-
-  case 14: /* factor: IDENTIFIER  */
-#line 106 "parser.y"
-                   {
-          (yyval.ast) = create_identifier_node((yyvsp[0].id));
-        }
+  case 15: /* term: term DIVIDE factor  */
+#line 120 "parser.y"
+    {
+        char* temp = new_temp();
+        add_code('/', (yyvsp[-2].expr).place, (yyvsp[0].expr).place, temp);
+        strcpy((yyval.expr).place, temp);
+    }
 #line 1296 "y.tab.c"
     break;
 
-  case 15: /* factor: MINUS factor  */
-#line 109 "parser.y"
-                               {
-          (yyval.ast) = create_binary_op_node(create_number_node(0), (yyvsp[0].ast), '-');
-        }
+  case 16: /* factor: IDENTIFIER  */
+#line 129 "parser.y"
+    {
+        strcpy((yyval.expr).place, (yyvsp[0].id));
+    }
 #line 1304 "y.tab.c"
     break;
 
-  case 16: /* factor: LPAREN expr RPAREN  */
-#line 112 "parser.y"
-                           { (yyval.ast) = (yyvsp[-1].ast); }
-#line 1310 "y.tab.c"
+  case 17: /* factor: NUMBER  */
+#line 133 "parser.y"
+    {
+        sprintf((yyval.expr).place, "%d", (yyvsp[0].num));
+    }
+#line 1312 "y.tab.c"
+    break;
+
+  case 18: /* factor: LPAREN expr RPAREN  */
+#line 137 "parser.y"
+    {
+        strcpy((yyval.expr).place, (yyvsp[-1].expr).place);
+    }
+#line 1320 "y.tab.c"
     break;
 
 
-#line 1314 "y.tab.c"
+#line 1324 "y.tab.c"
 
       default: break;
     }
@@ -1503,95 +1513,59 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 114 "parser.y"
+#line 142 "parser.y"
 
 
-// Create a number node
-Node *create_number_node(int value) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_NUMBER;
-    node->value = value;
-    return node;
+// Create a new temporary variable
+char* new_temp() {
+    static char temp[10];
+    sprintf(temp, "t%d", temp_counter++);
+    return temp;
 }
 
-// Create an identifier node
-Node *create_identifier_node(char *id) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_IDENTIFIER;
-    node->id = id;
-    return node;
-}
-
-// Create a binary operation node
-Node *create_binary_op_node(Node *left, Node *right, char op) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_BINARY_OP;
-    node->binary_op.left = left;
-    node->binary_op.right = right;
-    node->binary_op.op = op;
-    return node;
-}
-
-// Create an assignment node
-Node *create_assign_node(char *id, Node *expr) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_ASSIGN;
-    node->assign.id = id;
-    node->assign.expr = expr;
-    return node;
-}
-
-// Create a statement node
-Node *create_statement_node(Node *stmt, Node *next) {
-    Node *node = (Node *) malloc(sizeof(Node));
-    node->type = NODE_STATEMENT;
-    node->stmt.stmt = stmt;
-    node->stmt.next = next;
-    return node;
-}
-
-// Print the AST with proper indentation
-void print_ast(Node *node, int indent) {
-    if (node == NULL) return;
-    
-    // Print indentation
-    for (int i = 0; i < indent; i++) {
-        printf("  ");
+// Add a three-address code instruction
+void add_code(char op, const char* arg1, const char* arg2, const char* result) {
+    if (code_count >= 100) {
+        printf("Error: Code array full\n");
+        return;
     }
     
-    // Print node based on its type
-    switch (node->type) {
-        case NODE_NUMBER:
-            printf("NUMBER: %d\n", node->value);
-            break;
-        case NODE_IDENTIFIER:
-            printf("IDENTIFIER: %s\n", node->id);
-            break;
-        case NODE_BINARY_OP:
-            printf("BINARY_OP: %c\n", node->binary_op.op);
-            print_ast(node->binary_op.left, indent + 1);
-            print_ast(node->binary_op.right, indent + 1);
-            break;
-        case NODE_ASSIGN:
-            printf("ASSIGN: %s\n", node->assign.id);
-            print_ast(node->assign.expr, indent + 1);
-            break;
-        case NODE_STATEMENT:
-            printf("STATEMENT:\n");
-            print_ast(node->stmt.stmt, indent + 1);
-            print_ast(node->stmt.next, indent);
-            break;
+    code[code_count].op = op;
+    strcpy(code[code_count].arg1, arg1);
+    strcpy(code[code_count].arg2, arg2);
+    strcpy(code[code_count].result, result);
+    
+    code_count++;
+}
+
+// Print the generated three-address code
+void print_code() {
+    printf("------------------------------------\n");
+    printf("Pos Operator Arg1 Arg2 Result\n");
+    printf("------------------------------------\n");
+    
+    for (int i = 0; i < code_count; i++) {
+        // Convert operator to string for better display
+        char op_str[5] = "";
+        op_str[0] = code[i].op;
+        op_str[1] = '\0';
+        
+        printf("%-4d %-8s %-4s %-4s %-4s\n", 
+               i, op_str, 
+               code[i].arg1, 
+               code[i].arg2, 
+               code[i].result);
     }
+    
+    printf("------------------------------------\n");
+}
+
+int main() {
+    printf("Enter C code (end with Ctrl+D):\n");
+    yyparse();
+    return 0;
 }
 
 void yyerror(const char *s) {
     fprintf(stderr, "Parse error: %s\n", s);
-}
-
-int main() {
-    printf("Enter expressions or assignments (end with semicolons):\n");
-    printf("Example: x = 10 + 5; y = x * 2;\n");
-    printf("Press Ctrl+D (EOF) to exit\n");
-    yyparse();
-    return 0;
 }

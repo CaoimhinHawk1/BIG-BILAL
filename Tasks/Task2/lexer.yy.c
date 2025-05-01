@@ -511,7 +511,9 @@ void update_position();
 void update_position_token(int length);
 #line 512 "lexer.yy.c"
 /* Regular definitions */
-#line 514 "lexer.yy.c"
+/* The following regular definitions are used to match different tokens in the input. */
+/* Each token type is associated with a specific pattern. */
+#line 516 "lexer.yy.c"
 
 #define INITIAL 0
 
@@ -728,10 +730,10 @@ YY_DECL
 		}
 
 	{
-#line 22 "lexer.l"
+#line 24 "lexer.l"
 
 
-#line 734 "lexer.yy.c"
+#line 736 "lexer.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -790,207 +792,207 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 24 "lexer.l"
+#line 26 "lexer.l"
 { update_position(); /* Ignore whitespace */ }
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 25 "lexer.l"
+#line 27 "lexer.l"
 { line_number++; column_number = 1; /* Handle newlines */ }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 27 "lexer.l"
+#line 29 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 28 "lexer.l"
+#line 30 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 29 "lexer.l"
+#line 31 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 30 "lexer.l"
+#line 32 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 31 "lexer.l"
+#line 33 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 32 "lexer.l"
+#line 34 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 33 "lexer.l"
+#line 35 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 34 "lexer.l"
+#line 36 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 35 "lexer.l"
+#line 37 "lexer.l"
 { update_position_token(yyleng); printf("KEYWORD\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 37 "lexer.l"
+#line 39 "lexer.l"
 { update_position_token(yyleng); printf("IDENTIFIER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 38 "lexer.l"
+#line 40 "lexer.l"
 { update_position_token(yyleng); printf("NUMBER\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 40 "lexer.l"
+#line 42 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 41 "lexer.l"
+#line 43 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 42 "lexer.l"
+#line 44 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 43 "lexer.l"
+#line 45 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 44 "lexer.l"
+#line 46 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 45 "lexer.l"
+#line 47 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 46 "lexer.l"
+#line 48 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 47 "lexer.l"
+#line 49 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 48 "lexer.l"
+#line 50 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 49 "lexer.l"
+#line 51 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 50 "lexer.l"
+#line 52 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 51 "lexer.l"
+#line 53 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 52 "lexer.l"
+#line 54 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 53 "lexer.l"
+#line 55 "lexer.l"
 { update_position_token(yyleng); printf("OPERATOR\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 55 "lexer.l"
+#line 57 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 56 "lexer.l"
+#line 58 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 57 "lexer.l"
+#line 59 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 58 "lexer.l"
+#line 60 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 59 "lexer.l"
+#line 61 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 60 "lexer.l"
+#line 62 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 61 "lexer.l"
+#line 63 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 62 "lexer.l"
+#line 64 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 63 "lexer.l"
+#line 65 "lexer.l"
 { update_position_token(yyleng); printf("DELIMITER\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 65 "lexer.l"
+#line 67 "lexer.l"
 { update_position_token(yyleng); printf("STRING\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 38:
 /* rule 38 can match eol */
 YY_RULE_SETUP
-#line 67 "lexer.l"
+#line 69 "lexer.l"
 { line_number++; column_number = 1; /* Ignore comments */ }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 69 "lexer.l"
+#line 71 "lexer.l"
 { update_position_token(yyleng); printf("UNKNOWN\t\t%s\t\t%d\t%d\n", yytext, line_number, column_number - yyleng); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 71 "lexer.l"
+#line 73 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 993 "lexer.yy.c"
+#line 995 "lexer.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1995,9 +1997,13 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 71 "lexer.l"
+#line 73 "lexer.l"
 
+/* The above rules define how to handle different tokens. Each rule specifies a pattern and the action to take when that pattern is matched. 
+   The action typically involves printing the token type, lexeme, line number, and column number. */
 
+/* The following functions are used to update the line and column numbers. 
+   They are called whenever a token is matched or whitespace is encountered. */
 void update_position() {
     column_number += yyleng;
 }

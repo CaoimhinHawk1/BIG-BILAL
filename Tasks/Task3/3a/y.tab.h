@@ -61,8 +61,7 @@ extern int yydebug;
     DIVIDE = 262,                  /* DIVIDE  */
     LPAREN = 263,                  /* LPAREN  */
     RPAREN = 264,                  /* RPAREN  */
-    NEG = 265,                     /* NEG  */
-    POWER = 266                    /* POWER  */
+    NEG = 265                      /* NEG  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -79,7 +78,6 @@ extern int yydebug;
 #define LPAREN 263
 #define RPAREN 264
 #define NEG 265
-#define POWER 266
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

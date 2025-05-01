@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// This is a sample C program for testing the lexical analyzer
+
 int main() {
     int x = 10;
     float y = 3.14;

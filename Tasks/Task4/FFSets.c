@@ -82,6 +82,8 @@ bool is_terminal(char c) {
 }
 
 // Read grammar rules from a file
+// The grammar file should contain rules in the format: A -> aB | cD | ε
+// where A is a non-terminal, a, c are terminals, and ε represents epsilon (empty string).
 void read_grammar(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -134,6 +136,9 @@ void read_grammar(const char* filename) {
 }
 
 // Compute the FIRST set for all non-terminals
+// This function iterates through each rule and checks if the non-terminal can derive a terminal or epsilon.
+// It updates the FIRST set accordingly.
+// It uses a boolean flag to track if any changes were made in the FIRST sets during the iteration.
 void compute_first_sets() {
     bool changed;
     do {
@@ -208,7 +213,8 @@ void compute_first_sets() {
     } while (changed);
 }
 
-// Compute the FIRST set of a string
+// This function computes the FIRST set of a string (sequence of symbols)
+// It iterates through each symbol in the string and checks if it is a terminal or non-terminal.
 bool compute_first_of_string(char* str, bool* result) {
     bool contains_epsilon = true;
     
@@ -247,13 +253,25 @@ bool compute_first_of_string(char* str, bool* result) {
     return contains_epsilon;
 }
 
-// Compute the FOLLOW set for all non-terminals
+// This function computes the FOLLOW set for all non-terminals in the grammar
+// It iterates through each rule and checks if the non-terminal is followed by another non-terminal or terminal.
+// If it is followed by a terminal, it adds that terminal to the FOLLOW set of the non-terminal.
 void compute_follow_sets() {
+    // Clear all follow sets first
+    for (int i = 0; i < MAX_NON_TERMINALS; i++) {
+        for (int j = 0; j <= MAX_TERMINALS; j++) {
+            grammar.follow_sets[i][j] = false;
+        }
+    }
+    
+    // Set END_MARKER in follow set of start symbol
+    int start_idx = non_terminal_to_index(grammar.rules[0].lhs);
+    grammar.follow_sets[start_idx][terminal_to_index(END_MARKER)] = true;
     bool changed;
     do {
         changed = false;
         
-        // For each rule
+        // For each rule in the grammar
         for (int i = 0; i < grammar.rule_count; i++) {
             char lhs = grammar.rules[i].lhs;
             char* rhs = grammar.rules[i].rhs;
@@ -301,7 +319,9 @@ void compute_follow_sets() {
     } while (changed);
 }
 
-// Print the FIRST sets
+// Print the FIRST sets for all non-terminals
+// This function iterates through each non-terminal and checks if it has any elements in its FIRST set.
+// If it does, it prints the non-terminal and its FIRST set.
 void print_first_sets() {
     for (int i = 0; i < MAX_NON_TERMINALS; i++) {
         bool non_empty = false;
@@ -337,8 +357,20 @@ void print_first_sets() {
 }
 
 // Print the FOLLOW sets
+// This function prints the FOLLOW sets for all non-terminals in the grammar.
+// It iterates through each non-terminal and checks if it has any elements in its FOLLOW set.
 void print_follow_sets() {
+    // Create a set of non-terminals that appear in the grammar
+    bool non_terminal_exists[MAX_NON_TERMINALS] = {false};
+    
+    for (int i = 0; i < grammar.rule_count; i++) {
+        non_terminal_exists[non_terminal_to_index(grammar.rules[i].lhs)] = true;
+    }
+    
     for (int i = 0; i < MAX_NON_TERMINALS; i++) {
+        // Skip if this non-terminal doesn't exist in the grammar
+        if (!non_terminal_exists[i]) continue;
+        
         bool non_empty = false;
         
         // Check if this non-terminal has any elements in its FOLLOW set
